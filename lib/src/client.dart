@@ -1,16 +1,16 @@
-import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
 import 'env.dart' if (dart.library.io) 'env_io.dart';
-import 'exceptions.dart';
-import 'models.dart';
-
-/// The SDK's version, sent in the `User-Agent` header.
-const version = '0.1.0';
+import 'errors/oushodh_exception.dart';
+import 'http/transport.dart';
+import 'models/medicine.dart';
+import 'models/medicine_detail.dart';
+import 'models/meta.dart';
+import 'models/page.dart';
+import 'models/search_result.dart';
 
 /// A client for the Oushodh API `/v1`.
 class Oushodh {
@@ -29,22 +29,27 @@ class Oushodh {
     this.timeout = const Duration(seconds: 30),
     this.maxRetries = 2,
     http.Client? httpClient,
-  }) : _apiKey = apiKey ?? environmentKey() ?? '',
-       baseUrl = baseUrl.replaceFirst(RegExp(r'/+$'), ''),
-       _http = httpClient ?? http.Client(),
+  }) : baseUrl = baseUrl.replaceFirst(RegExp(r'/+$'), ''),
        _ownsHttp = httpClient == null {
-    if (_apiKey.isEmpty) {
+    final key = apiKey ?? environmentKey() ?? '';
+
+    if (key.isEmpty) {
       throw OushodhException('No API key. Pass apiKey or set the OUSHODH_API_KEY environment variable.');
     }
+
+    _transport = Transport(
+      apiKey: key,
+      timeout: timeout,
+      maxRetries: maxRetries,
+      httpClient: httpClient ?? http.Client(),
+    );
   }
 
   final String baseUrl;
   final Duration timeout;
   final int maxRetries;
-  final String _apiKey;
-  final http.Client _http;
   final bool _ownsHttp;
-  final _random = Random();
+  late final Transport _transport;
 
   /// The account the key belongs to. Use it to check that a key works.
   Future<Meta> meta() async {
@@ -104,7 +109,7 @@ class Oushodh {
 
   /// The bytes of a picture, from its file name. The request carries no key.
   Future<Uint8List> getImage(String file) async {
-    final response = await _request(Uri.parse(imageUrl(file)), auth: false);
+    final response = await _transport.get(Uri.parse(imageUrl(file)), auth: false);
 
     return response.bodyBytes;
   }
@@ -112,88 +117,15 @@ class Oushodh {
   /// Closes the HTTP client the SDK made. A client you passed in stays open.
   void close() {
     if (_ownsHttp) {
-      _http.close();
+      _transport.httpClient.close();
     }
   }
 
   Future<Map<String, dynamic>> _json(String path, Map<String, String> query) async {
     final uri = Uri.parse('$baseUrl$path');
-    final response = await _request(query.isEmpty ? uri : uri.replace(queryParameters: query), auth: true);
+    final response = await _transport.get(query.isEmpty ? uri : uri.replace(queryParameters: query), auth: true);
 
     return jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
-  }
-
-  Future<http.Response> _request(Uri uri, {required bool auth}) async {
-    for (var attempt = 0; ; attempt++) {
-      try {
-        return await _send(uri, auth: auth);
-      } on OushodhException catch (error) {
-        final delay = _retryDelay(error, attempt);
-
-        if (delay == null) {
-          rethrow;
-        }
-
-        await Future<void>.delayed(delay);
-      }
-    }
-  }
-
-  Future<http.Response> _send(Uri uri, {required bool auth}) async {
-    final headers = {'User-Agent': 'oushodh-dart/$version', if (auth) 'Authorization': 'Bearer $_apiKey'};
-    final http.Response response;
-
-    try {
-      // shortcut: a timed-out request is abandoned, not aborted; use http's AbortableRequest if that ever matters.
-      response = await _http.get(uri, headers: headers).timeout(timeout);
-    } on TimeoutException {
-      throw OushodhTimeoutException('The request timed out after ${timeout.inMilliseconds} ms');
-    } on http.ClientException {
-      throw ConnectionException('The request could not reach the Oushodh API');
-    }
-
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return response;
-    }
-
-    Object? body;
-
-    try {
-      body = jsonDecode(utf8.decode(response.bodyBytes));
-    } on FormatException {
-      body = null;
-    }
-
-    throw exceptionFor(response.statusCode, body, int.tryParse(response.headers['retry-after'] ?? ''));
-  }
-
-  Duration? _retryDelay(OushodhException error, int attempt) {
-    if (attempt >= maxRetries) {
-      return null;
-    }
-
-    if (error is RateLimitException) {
-      // quota_exceeded's Retry-After runs to the next month, so waiting is never right.
-      if (error.code != 'rate_limited') {
-        return null;
-      }
-
-      final retryAfter = error.retryAfter;
-
-      return retryAfter == null ? _backoff(attempt) : Duration(seconds: retryAfter);
-    }
-
-    if (error is ServerException || error is ConnectionException) {
-      return _backoff(attempt);
-    }
-
-    return null;
-  }
-
-  Duration _backoff(int attempt) {
-    final base = min(8000, 500 * pow(2, attempt).toInt());
-
-    return Duration(milliseconds: base ~/ 2 + _random.nextInt(base ~/ 2 + 1));
   }
 }
 
