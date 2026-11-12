@@ -1,0 +1,16 @@
+name: oushodh
+description: The official Dart SDK for the Oushodh API, medicine data for Bangladesh checked against the DGDA register. Works in Flutter and on servers.
+version: 0.1.0
+homepage: https://oushodh.dev/docs
+repository: https://github.com/oushodh/oushodh-dart
+issue_tracker: https://github.com/oushodh/oushodh-dart/issues
+
+environment:
+  sdk: ^3.8.0
+
+dependencies:
+  http: ^1.6.0
+
+dev_dependencies:
+  lints: ^6.1.0
+  test: ^1.33.0
