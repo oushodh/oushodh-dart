@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+## 0.1.0 (12 Nov, 2026)
 
 - First version of the SDK for the Oushodh API `/v1`.
 - `Oushodh` client: `meta()`, `listMedicines()`, `medicines()` (a `Stream` that pages to the end), `search()`, `getMedicine()`, `imageUrl()` and `getImage()`.
