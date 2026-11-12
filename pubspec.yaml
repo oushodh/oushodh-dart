@@ -6,7 +6,7 @@ repository: https://github.com/oushodh/oushodh-dart
 issue_tracker: https://github.com/oushodh/oushodh-dart/issues
 
 environment:
-  sdk: ^3.8.0
+  sdk: ^3.11.0
 
 dependencies:
   http: ^1.6.0
