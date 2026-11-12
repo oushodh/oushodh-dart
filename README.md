@@ -22,8 +22,6 @@ dependencies:
 
 Then run `dart pub get`, or `flutter pub get` in a Flutter app.
 
-The repository is private, so your GitHub account needs access to it.
-
 From pub.dev (coming soon):
 
 ```sh
