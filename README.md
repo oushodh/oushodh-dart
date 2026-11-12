@@ -12,23 +12,13 @@ Full API reference: <https://oushodh.dev/docs>.
 
 ## Install
 
-Install from GitHub for now. Add this to your `pubspec.yaml`:
-
-```yaml
-dependencies:
-  oushodh:
-    git:
-      url: https://github.com/oushodh/oushodh-dart.git
-      ref: v0.1.0
-```
-
-Then run `dart pub get`, or `flutter pub get` in a Flutter app.
-
-From pub.dev (coming soon):
+Install it from [pub.dev](https://pub.dev/packages/oushodh):
 
 ```sh
 dart pub add oushodh
 ```
+
+In a Flutter app, run `flutter pub add oushodh`.
 
 The SDK needs Dart 3.11 or newer.
 
@@ -54,13 +44,13 @@ With no `apiKey`, the client reads the `OUSHODH_API_KEY` environment variable. T
 
 ## Configuration
 
-| Option       | Default                   | What it does                                       |
-| ------------ | ------------------------- | -------------------------------------------------- |
-| `apiKey`     | `OUSHODH_API_KEY`         | Your API key                                       |
-| `baseUrl`    | `https://api.oushodh.dev` | Where the API lives                                |
-| `timeout`    | 30 seconds                | How long one attempt may take                      |
-| `maxRetries` | `2`                       | Retries after a `429`, a `5xx` or a network error  |
-| `httpClient` | a new `http.Client`       | Another `http.Client` to use, for tests or a proxy |
+| Option       | Default                   | What it does                                                   |
+| ------------ | ------------------------- | -------------------------------------------------------------- |
+| `apiKey`     | `OUSHODH_API_KEY`         | Your API key                                                   |
+| `baseUrl`    | `https://api.oushodh.dev` | Where the API lives                                            |
+| `timeout`    | 30 seconds                | How long one attempt may take                                  |
+| `maxRetries` | `2`                       | Retries after a `429 rate_limited`, a `5xx` or a network error |
+| `httpClient` | a new `http.Client`       | Another `http.Client` to use, for tests or a proxy             |
 
 ```dart
 final oushodh = Oushodh(
@@ -262,7 +252,7 @@ Both take the file name, not a URL. Pictures need no key, so `getImage()` sends 
 
 ## Flutter
 
-The library uses no `dart:io`, so the same code runs on mobile, desktop and the web.
+The library uses `dart:io` only to read `OUSHODH_API_KEY`, through a conditional import, so the same code runs on mobile, desktop and the web.
 
 Anyone who has your app can read a key that ships inside it. For an app you give to the public, keep the key on your server and let the app ask your server. Put the key in the app only when you control every copy of it, such as an internal tool.
 
@@ -298,7 +288,7 @@ dart test -p chrome
 
 ## Release
 
-For maintainers. Set the version in `pubspec.yaml` and `lib/src/version.dart`, and move the CHANGELOG entry under it. Pushing a `v*` tag runs the Release workflow, which publishes to pub.dev with trusted publishing (OIDC). The package is not on pub.dev yet.
+For maintainers. Set the version in `pubspec.yaml` and `lib/src/version.dart`, and move the CHANGELOG entry under it. Pushing a `v*` tag runs the Release workflow, which publishes to pub.dev with trusted publishing (OIDC).
 
 ## Links
 
