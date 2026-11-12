@@ -19,7 +19,7 @@ dependencies:
   oushodh:
     git:
       url: https://github.com/oushodh/oushodh-dart.git
-      ref: main
+      ref: v0.1.0
 ```
 
 Then run `dart pub get`, or `flutter pub get` in a Flutter app.
